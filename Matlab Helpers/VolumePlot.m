@@ -1,4 +1,15 @@
 function VolumePlot(X,Y,Z,D,varargin)
+%% VolumePlot creates a collection of 3D isosurfaces.
+% X, Y, and Z correspond to the grids produced by meshgrid
+% D is the 3D matrix for the scalar field to be displayed
+% The optional output is a list of percentiles. For each percentile
+%     an isosurface shell is created. e.g. [0.2 0.8] would plot the
+%     20th and 80th percentiles. 
+%   The default is [0.25, 0.5, 0.75].
+%   If the data has both positive and negative value, then the
+%     percentile value is based on the maximum absolute value.
+%     A shell is made for both signs of the percentile value.
+
 
 if isempty(varargin)
     p = [0.25, 0.5, 0.75];
@@ -8,7 +19,7 @@ end
 
 % fh = figure;
 
-cm = darkjet(201);
+cm = jet(201);
 
 M = max(abs(D(:)));
 

@@ -1,3 +1,6 @@
+# Invisible files
+._*
+
 # Python
 *.py[cod]
 

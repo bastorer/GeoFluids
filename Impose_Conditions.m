@@ -23,19 +23,22 @@ function [As, P] = Impose_Conditions(As, bs)
   %% Step 2: Row reduce the problem to make sure that we don't have
   %          linearly dependent conditions.
   
-  num_conds = size(bs,1);
-  bs = rref(bs);
-  tmp = sum(abs(bs),2);
-  bs = bs(tmp~=0,:);
+  % NOTE: This is expensive, so I've removed it.
   
-  if num_conds > size(bs,1)
-      null_conds = num_conds - size(bs,1);
-      num_conds = size(bs,1);
-      warning(sprintf(['Impose_Conditions: %d Conditions were ' ...
-                           'linear combinations of the other conditions.',...
-                      ' There are %d remaining conditions.'],...
-                          null_conds, num_conds))
-  end
+  num_conds = size(bs,1);
+  removed_conds = 0;
+%   bs = rref(bs);
+%   tmp = sum(abs(bs),2);
+%   bs = bs(tmp~=0,:);
+%   
+%   if num_conds > size(bs,1)
+%       null_conds = num_conds - size(bs,1);
+%       num_conds = size(bs,1);
+%       warning(['Impose_Conditions: %d Conditions were ' ...
+%                            'linear combinations of the other conditions.',...
+%                       ' There are %d remaining conditions.'],...
+%                           null_conds, num_conds)
+%   end
   
   %% Step 3: Impose the conditions
   
@@ -46,20 +49,18 @@ function [As, P] = Impose_Conditions(As, bs)
   counter = 0;
   while size(bs,1) > 0
       counter = counter + 1;
-      %[m,index] = max(abs(bs(1,:)));
-      index = find(bs(1,:), 1, 'first');
-      m = bs(1,index);
+      [m,index] = max(abs(bs(1,:)));
+%       index = find(bs(1,:), 1, 'first');
+%       m = bs(1,index);
       
       if m == 0 || isempty(index)
         % If the maximum value was zero, or no non-zero entries were found, 
         % then one of our conditions is a linear combination of the others.
-        % Step 2 above should have removed the necessity for this case,
-        % but I've kept for the sake of being cautious.
           
-          warning(sprintf(['Impose_Conditions: Conditions %d is a ' ...
-                           'linear combination of the other conditions.'],...
-                          counter))
-          
+%           warning(['Impose_Conditions: Conditions %d is a ' ...
+%                            'linear combination of the other conditions.'],...
+%                           counter)
+          removed_conds = removed_conds + 1;
           if size(bs,1) > 1
               bs = bs(2:end,:);
           else
@@ -96,16 +97,21 @@ function [As, P] = Impose_Conditions(As, bs)
           % Note: Since the condition matrix bs was put
           % into RREF, this isn't necessary and so was
           % removed.
-          % ab = bs(:,index);
-          % bs = bs + ab*b;
-          
+          ab = bs(2:end,index);          
           
           if size(bs,1) > 1
               bs = bs(2:end,:);
               bs(:,index) = [];
+              bs = bs + ab*b;
           else
               bs = [];
           end
       end
   end
+  
+  warning(['Impose_Conditions: %d Conditions were ' ...
+           'linear combinations of the other conditions.',...
+           ' %d conditions have been imposed.'],...
+           removed_conds, num_conds)
+  
 end

@@ -1,11 +1,11 @@
+
+
 import numpy as np
 import numpy.linalg as nlg
 import scipy
 import scipy.sparse as sp
 from scipy.misc import factorial
 import scipy.linalg as spalg
-from scipy.sparse.linalg import eigs
-import matplotlib.pyplot as plt
 
 def FiniteDiff(x, n, spb, uniform):
     #FiniteDiff : Create a finite difference matrix of arbitrary order for an
@@ -20,7 +20,7 @@ def FiniteDiff(x, n, spb, uniform):
         Nx = len(x)
 
     if spb:
-        Dx = sp.csr_matrix((Nx, Nx))
+        Dx = sp.lil_matrix((Nx, Nx))
     else:
         Dx = np.zeros([Nx, Nx])
 
@@ -34,7 +34,7 @@ def FiniteDiff(x, n, spb, uniform):
             dx = x[1] - x[0];
 
         # Deal with boundary issues
-        for i in range(0,int(np.ceil(n/2.))):
+        for i in range(0,int(np.ceil(n/2.0))):
             A = np.zeros([n+1,n+1])
             for j in range(0,n+1):
                 A[:,j] = np.power(((j-i)*dx)*np.ones([1,n+1]),range(0,n+1))/factorial(range(0,n+1))
@@ -66,22 +66,15 @@ def FiniteDiff(x, n, spb, uniform):
             coeff = nlg.solve(A,b)
             coeff = coeff.conj().transpose()
             coeff = np.tile(coeff, [Nx, 1])
-            # print coeff.T
-            # print sp.spdiags(coeff.T, range(0,n+1), Nx-n, Nx).todense()
             Dx[n/2:Nx-n/2,:] = sp.spdiags(coeff.T, range(0,n+1), Nx-n, Nx).todense()
         elif n % 2 == 1: # If odd...
             for j in range(int(-np.floor(n/2.0))-1,int(np.ceil(n/2.0))):
                 A[:,j+int(np.floor(n/2.0))+1] = ((j*dx)**range(0,n+1))/factorial(range(0,n+1))
             b = np.zeros(n+1)
             b[1] = 1;
-            #print A
-            #print b
             coeff = nlg.solve(A,b)
             coeff = coeff.conj().transpose()
             coeff = np.tile(coeff, [Nx, 1])
-            #print Dx[int(np.ceil(n/2.0)):Nx-int(np.ceil(n/2.0)),:]
-            #print coeff.T
-            #print sp.spdiags(coeff.T, range(0,n+1), Nx-n-1, Nx).todense()
             Dx[int(np.ceil(n/2.0)):Nx-int(np.ceil(n/2.0)),:] = sp.spdiags(coeff.T, range(0,n+1), Nx-n-1, Nx).todense()
     else:
         for i in range(0,Nx):
@@ -143,12 +136,22 @@ def FiniteDiff(x, n, spb, uniform):
                         coeff = nlg.solve(A,b)
                         coeff = coeff.conj().tranpose()
                         Dx[i, i-int(np.ceil(n/2.0)):i+int(np.floor(n/2.0))] = coeff
+
+    if spb:
+        # If we're making a sparse matrix, convert it now into csr form.
+        Dx = Dx.tocsr()
+            
     return Dx
 
 if __name__ == '__main__': #For testing
     Nx = 10
     Lx = 2
-    diff_ordx = 4
-    x   = np.linspace(0, Lx, Nx+1)
-    Dx  = FiniteDiff(x, diff_ordx, False, True)
+    diff_ordx = 2
+    x = np.linspace(0, Lx, Nx+1)
+    print 'Sparse Test'
+    Dx = FiniteDiff(x, diff_ordx, True, True)
+    print Dx
+
+    print 'Non-Sparse Test'
+    Dx = FiniteDiff(x, diff_ordx, False, True)
     print Dx

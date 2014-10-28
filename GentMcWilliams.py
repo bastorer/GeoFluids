@@ -6,6 +6,8 @@
 
 import timeit
 import scipy
+import time
+import sys
 
 import scipy.sparse as sp
 import scipy.linalg as spalg
@@ -31,7 +33,7 @@ class Parameters:
     N2       = 100
     Nt       = 40
     kts      = np.arange(1,3,1)
-    kzs      = np.arange(0,1.2,0.05)
+    kzs      = np.arange(0,1.2,0.1)
     nmodes   = 1
     printout = False
 
@@ -96,8 +98,8 @@ def QG_Vortex_Stability():
     ## Initialize parameters
     paramsCheb = Parameters()
     paramsFD   = Parameters()
-    paramsFD.Nr = 301
-    paramsFD.N2 = 150
+    paramsFD.Nr = 2001
+    paramsFD.N2 = 1000
 
     ## Set-up the geometry
 
@@ -147,32 +149,12 @@ def QG_Vortex_Stability():
             Bfd = GeomFD.Lap - kt2*R2invF - kz2*np.eye(paramsFD.N2,paramsFD.N2)
             Afd = np.dot(np.diag(Prfd),Bfd) - np.diag(Qrfd)
             
-            #fp = open('A_py.txt', 'w')
-            #Print_npArray(fp, Afd)
-            #fp.close()
-
-            #fp = open('B_py.txt', 'w')
-            #Print_npArray(fp, Bfd)
-            #fp.close()
-
-            #fp = open('Lap_py.txt', 'w')
-            #Print_npArray(fp, GeomFD.Lap)
-            #fp.close()
-            
             # Find eigen-space (Direct)
             
             t0 = timeit.timeit()
             eigValCheb, eigVecCheb = spalg.eig(Acheb,Bcheb)
             t1 = timeit.timeit()
             timesp = t1 - t0
-
-            tmp4 = eigValCheb.real.argsort()
-            eigValCheb = eigValCheb[tmp4]
-            eigVecCheb = eigVecCheb[:,tmp4]
-
-            tmp1, tmp2 = spalg.eig(Afd, Bfd)
-            tmp3 = tmp1.real.argsort()
-            tmp1 = tmp1[tmp3]
             
             ind = (-eigValCheb.imag).argsort()
             eigVecCheb = eigVecCheb[:,ind]
@@ -206,31 +188,14 @@ def QG_Vortex_Stability():
                 tmp = tmp.conj()
                 T = np.diag(np.ravel(tmp))
                 Tinv = nlg.inv(T)
-                #chebvec = np.dot(T, chebvec)
-
-                #plt.subplot(3,2,1)
-                #plt.plot(X)
-
-                #plt.subplot(3,2,2)
-                #plt.plot(Xnew)
-
-                #plt.subplot(3,2,3)
-                #plt.plot(X,Y.real,'-b', X,Y.imag,'-r')
-
-                #plt.subplot(3,2,4)
-                #plt.plot(Xnew,chebvec.real,'-b', Xnew,chebvec.imag,'-r')
-
-                #plt.subplot(3,2,6)
-                #plt.plot(Xnew,np.dot(T,chebvec).real,'-b', Xnew,np.dot(T,chebvec).imag,'-r')
-
-                #plt.show()
-
                 
                 t0 = timeit.timeit()
-                sig1, vec1 = eigs(np.dot(Afd,Tinv),1,np.dot(Bfd,Tinv),sigma=sig0,v0=np.dot(T,chebvec));
-                vec1 = np.dot(Tinv, vec1)
-                print 'sig0: ', sig0
-                print 'sig1: ', sig1
+                try:
+                    sig1, vec1 = eigs(np.dot(Afd, Tinv), 1, np.dot(Bfd,Tinv),\
+                                      sigma=sig0,v0=np.dot(T,chebvec), maxiter=500)
+                    vec1 = np.dot(Tinv, vec1)
+                except:
+                    sig1 = [np.nan+1j*np.nan];
                 
                 t1 = timeit.timeit()
                 timefd = t1 - t0

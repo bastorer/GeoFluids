@@ -32,8 +32,8 @@ class Parameters:
     Nr       = 201
     N2       = 100
     Nt       = 40
-    kts      = np.arange(1,3,1)
-    kzs      = np.arange(0,1.2,0.1)
+    kts      = np.arange(1,2,1)
+    kzs      = np.arange(0.4,1,0.1)
     nmodes   = 1
     printout = False
 
@@ -62,7 +62,7 @@ class Geometry:
             self.Dr2 = np.dot(self.Dr,self.Dr)
         elif method == 'FD':
             self.r = np.arange(params.Lr, -params.Lr-2*params.Lr/(params.Nr), -2*params.Lr/(params.Nr))
-            self.Dr = FiniteDiff(self.r, 4, True, True)
+            self.Dr = FiniteDiff(self.r, 8, True, True)
             self.Dr2 = np.dot(self.Dr, self.Dr)
 
 
@@ -98,8 +98,8 @@ def QG_Vortex_Stability():
     ## Initialize parameters
     paramsCheb = Parameters()
     paramsFD   = Parameters()
-    paramsFD.Nr = 2001
-    paramsFD.N2 = 1000
+    paramsFD.Nr = 1001
+    paramsFD.N2 = 500
 
     ## Set-up the geometry
 
@@ -183,6 +183,7 @@ def QG_Vortex_Stability():
                 interp_fcn = interp1d(X, Y, kind='cubic')
                 chebvec = interp_fcn(Xnew)
 
+
                 tmp = chebvec
                 tmp[tmp==0] = 1
                 tmp = tmp.conj()
@@ -194,6 +195,8 @@ def QG_Vortex_Stability():
                     sig1, vec1 = eigs(np.dot(Afd, Tinv), 1, np.dot(Bfd,Tinv),\
                                       sigma=sig0,v0=np.dot(T,chebvec), maxiter=500)
                     vec1 = np.dot(Tinv, vec1)
+                    plt.plot(Xnew[::-1], vec1.real, '-b', Xnew[::-1], vec1.imag, '-r')
+                    plt.show()
                 except:
                     sig1 = [np.nan+1j*np.nan];
                 

@@ -8,7 +8,7 @@ Nx = 100;
 
 x = linspace(0,1,Nx);
 
-Dx = FiniteDiff(x, 2, false, true);
+Dx = FiniteDiff(x, 4, false, true);
 
 A = Dx^2;
 B = speye(size(A));
@@ -37,19 +37,27 @@ end
 
 clear all;
 
-Nx = 30;
-Ny = 30;
+Nx = 1000;
+Ny = 1000;
 
 x = linspace(0,1,Nx);
 y = linspace(0,sqrt(2),Ny);
 
 [xx,yy] = meshgrid(x,y);
 
-[Dx, Dy] = FiniteDiff({x,y}, 2, false, true);
+[Dx, Dy] = FiniteDiff({x,y}, 4, true, true);
 
 A = Dx^2 + Dy^2;
 B = speye(size(A));
 
+% bs = [B(xx(:)==min(x),:); ...
+%       B(xx(:)==max(x),:); ...
+%       Dy(yy(:)==min(y),:); ...
+%       Dy(yy(:)==max(y),:)];
+% bs = [Dx(xx(:)==min(x),:); ...
+%       Dx(xx(:)==max(x),:); ...
+%       B(yy(:)==min(y),:); ...
+%       B(yy(:)==max(y),:)];
 bs = [Dx(xx(:)==min(x),:); ...
       Dx(xx(:)==max(x),:); ...
       Dy(yy(:)==min(y),:); ...
@@ -64,7 +72,8 @@ A = As{1};
 B = As{2};
 
 
-[vec, val] = eig(full(A),full(B));
+% [vec, val] = eig(full(A),full(B));
+[vec, val] = eigs(A,B,5,'lr');
 val = diag(val);
 
 vec = P*vec; % Re-introduce the removed points
@@ -75,8 +84,9 @@ val = val(real(val)<0);
 [val,ind] = sort(real(val), 'descend');
 vec = vec(:,ind);
 
-for ii = 1:10
+for ii = 1:5
     pcolor(xx,yy,reshape(vec(:,ii),[Nx,Ny]))
+    shading flat
     drawnow()
     pause(1)
 end

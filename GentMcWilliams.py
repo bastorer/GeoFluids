@@ -8,6 +8,7 @@ import timeit
 import scipy
 import time
 import sys
+import argparse
 
 import scipy.sparse as sp
 import scipy.linalg as spalg
@@ -21,21 +22,47 @@ from scipy.misc import factorial
 from cheb import cheb
 from FiniteDiff import FiniteDiff
 
+
+# Parse commandline inputs
+parser = argparse.ArgumentParser()
+parser.add_argument('--Neig', help='Number of grid points for eig computations.',\
+                    type=int, default = 201)
+parser.add_argument('--Neigs', help='Number of grid points for eigs computations.',\
+                    type=int, default = 1001)
+parser.add_argument('-H', '--depth', help='Fluid depth parameter. (DOES NOT DO ANYTHING)',\
+                     type=float,default=2.4e3)
+parser.add_argument('-L', '--width', help='Radius of the domain. (DOES NOT DO ANYTHING)',\
+                    type=float, default=200e3)
+parser.add_argument('-f0', '--coriolis', help='Coriolis f0 value. (DOES NOT DO ANYTHING)',\
+                    type=float, default=8e-5)
+parser.add_argument('-g', '--gravity', help='Acceleration due to gravity. (DOES NOT DO ANYTHING)',\
+                    type=float, default=9.81)
+parser.add_argument('-p', '--PrintOutputs', help='Flag to turn on display for each computation.',\
+                    action='store_true')
+parser.add_argument('-N', '--buoyancy', help='Buoyancy frequency. (DOES NOT DO ANYTHING)',\
+                    type=float, default=np.sqrt(5)*1e-3)
+parser.add_argument('-kt', '--k_theta', help='Azimuthal wavenumbers. Enter as -kt min max step .',\
+                    type=float, default=[1,3,1], nargs=3)
+parser.add_argument('-kz', '--k_z', help='Vertical wavenumbers. Enter as -kz min max step.',\
+                    type=float, default=[0,2,0.1], nargs=3)
+
+args = parser.parse_args()
+                    
 class Parameters:
     ## Class to hold parameter values
-    H        = 2.4e3
-    L        = 200e3
-    f0       = 8e-5
-    g        = 9.81
-    N        = np.sqrt(5)*1e-3
+    H        = args.depth
+    L        = args.width
+    f0       = args.coriolis
+    g        = args.gravity
+    N        = args.buoyancy
     Lr       = 6.25
-    Nr       = 201
-    N2       = 100
+    Nr       = args.Neig
+    N2       = args.Neig/2
     Nt       = 40
-    kts      = np.arange(1,2,1)
-    kzs      = np.arange(0.4,1,0.1)
+    kts      = np.arange(args.k_theta[0],args.k_theta[1],args.k_theta[2])
+    kzs      = np.arange(args.k_z[0],args.k_z[1],args.k_z[2])
     nmodes   = 1
-    printout = False
+    printout = args.PrintOutputs
 
     def display(self):
         print 'H = {0}'.format(self.H)
@@ -98,8 +125,8 @@ def QG_Vortex_Stability():
     ## Initialize parameters
     paramsCheb = Parameters()
     paramsFD   = Parameters()
-    paramsFD.Nr = 1001
-    paramsFD.N2 = 500
+    paramsFD.Nr = args.Neigs
+    paramsFD.N2 = args.Neigs/2
 
     ## Set-up the geometry
 
@@ -177,28 +204,59 @@ def QG_Vortex_Stability():
                               np.ravel(GeomCheb.r[1:paramsCheb.N2+1]),\
                               np.array([0])])[::-1]
                 Y = np.hstack([np.array([0]), eigVecCheb[:,ii], np.array([0])])[::-1]
+
+                # Normalize Y
+                ind = (-np.abs(Y)).argsort()
+                Y = Y/Y[ind[0]]
                 
                 Xnew = np.ravel(GeomFD.r[1:paramsFD.N2+1])[::-1]
                 
                 interp_fcn = interp1d(X, Y, kind='cubic')
                 chebvec = interp_fcn(Xnew)
 
+                chebvec = chebvec[::-1]
+                Xnew = Xnew[::-1]
 
                 tmp = chebvec
                 tmp[tmp==0] = 1
                 tmp = tmp.conj()
                 T = np.diag(np.ravel(tmp))
                 Tinv = nlg.inv(T)
-                
+
                 t0 = timeit.timeit()
                 try:
-                    sig1, vec1 = eigs(np.dot(Afd, Tinv), 1, np.dot(Bfd,Tinv),\
-                                      sigma=sig0,v0=np.dot(T,chebvec), maxiter=500)
-                    vec1 = np.dot(Tinv, vec1)
-                    plt.plot(Xnew[::-1], vec1.real, '-b', Xnew[::-1], vec1.imag, '-r')
-                    plt.show()
+                    sig1, vec1 = eigs(np.dot(Afd,Tinv), 1, np.dot(Bfd,Tinv),\
+                                      sigma=sig0,v0=np.dot(T,chebvec))
+
+                    # Normalize vec1
+                    ind = (-np.abs(vec1)).argsort(axis=None)
+                    vec1 = vec1/vec1[ind[0]]
+
+                    #plt.subplot(3,2,1)
+                    #plt.plot(Xnew,chebvec.real,'-b', Xnew,chebvec.imag,'-r')
+                    #plt.title('Original Eig Vector')
+
+                    #plt.subplot(3,2,2)
+                    #plt.plot(Xnew, np.dot(T,chebvec).real, '-b', Xnew, np.dot(T,chebvec).imag, '-r')
+                    #plt.title('Transformed Eig Vector')
+                    
+                    #plt.subplot(3,2,3)
+                    #plt.plot(Xnew, vec1.real, '-b', Xnew, vec1.imag, '-r')
+                    #plt.title('Original Eigs Vector')
+                    
+                    #vec1 = np.dot(Tinv, vec1)
+                    #plt.subplot(3,2,4)
+                    #plt.plot(Xnew, vec1.real, '-b', Xnew, vec1.imag, '-r')
+                    #plt.title('Inverse Transformed Eigs Vector')
+
+                    #plt.subplot(3,2,5)
+                    #plt.plot(Xnew, np.abs(np.ravel(vec1)-np.ravel(chebvec)))
+                    #plt.title('Absolute difference')
+                    
+                    #plt.show()
                 except:
-                    sig1 = [np.nan+1j*np.nan];
+                    sig1 = [np.nan+1j*np.nan]
+                    print 'Eigs failed for mode {0:2f}, k_theta = {1:2f}, kz = {2:4f}.\n'.format(ii,kt,kz)
                 
                 t1 = timeit.timeit()
                 timefd = t1 - t0
@@ -213,15 +271,54 @@ def QG_Vortex_Stability():
                 # Display the results                
                 if paramsCheb.printout:
                     print '----------'
-                    print 'kz = {0:4f}, kt = {1:2d}'.format(kz, kt)
+                    print 'kz = {0:4f}, kt = {1:2f}'.format(kz, kt)
                     print 'eig : growth rate = {0:4e}, frequency = {1:4e}, cputime = {2:4e}'\
                       .format(grow, freq, timesp)
                     print 'eigs: growth rate = {0:4e}, frequency = {1:4e}, cputime = {2:4e}'\
                       .format(growfd, freqfd, timefd)
 
-    for ii in xrange(0, kts.shape[0]):
-        plt.plot(kzs, 4*np.ravel(growthfd[:,ii,0]), '-o', kzs, 4*np.ravel(growthsp[:,ii,0]), '-*')
-        plt.show()
+    # Plot the eigenvalue results.
+    if (np.ravel(kts)).shape[0] < 4:
+        for ii in xrange(0, kts.shape[0]):
+            plt.subplot(1,2,1)
+            plt.plot(kzs, 4*np.ravel(growthfd[:,ii,0]), '-o', kzs, 4*np.ravel(growthsp[:,ii,0]), '-*')
+            plt.title('Growth Rate')
+        
+            plt.subplot(1,2,2)
+            plt.plot(kzs, 4*np.ravel(frequyfd[:,ii,0]), '-o', kzs, 4*np.ravel(frequysp[:,ii,0]), '-*')
+            plt.title('Prop. Speed')
+        
+            plt.show()
+    elif (np.ravel(kzs)).shape[0] < 4:
+        for ii in xrange(0, kzs.shape[0]):
+            plt.subplot(1,2,1)
+            plt.plot(np.ravel(kts), 4*np.ravel(growthfd[ii,:,0]), '-o', np.ravel(kts), 4*np.ravel(growthsp[ii,:,0]), '-*')
+            plt.title('Growth Rate')
+    
+            plt.subplot(1,2,2)
+            plt.plot(np.ravel(kts), 4*np.ravel(frequyfd[ii,:,0]), '-o', np.ravel(kts), 4*np.ravel(frequysp[ii,:,0]), '-*')
+            plt.title('Prop. Speed')
+        
+            plt.show()
+    else:
+        
+        plt.subplot(2,2,1)
+        plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,0])
+        plt.title('Growth Rate (eigs)')
 
+        plt.subplot(2,2,2)
+        plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,0])
+        plt.title('Prop. Speed (eigs)')
+
+        plt.subplot(2,2,3)
+        plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,0])
+        plt.title('Growth Rate (eig)')
+
+        plt.subplot(2,2,4)
+        plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,0])
+        plt.title('Prop. Speed (eig)')
+
+        plt.show()
+    
 if __name__ == '__main__': #For testing
    QG_Vortex_Stability()

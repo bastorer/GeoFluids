@@ -256,7 +256,8 @@ def QG_Vortex_Stability():
                     #plt.show()
                 except:
                     sig1 = [np.nan+1j*np.nan]
-                    print 'Eigs failed for mode {0:.2f}, k_theta = {1:.2f}, kz = {2:.4f}.'.format(ii,kt,kz)
+                    print 'Eigs failed for mode {0:.2f}, k_theta = {1:.2f}, kz = {2:.4f}.\n'.format(ii,kt,kz)
+                    sys.stdout.flush()
                 
                 t1 = timeit.timeit()
                 timefd = t1 - t0
@@ -272,10 +273,11 @@ def QG_Vortex_Stability():
                 if paramsCheb.printout:
                     print '----------'
                     print 'kz = {0:4f}, kt = {1:2f}'.format(kz, kt)
-                    print 'eig : growth rate = {0:4e}, frequency = {1:4e}, cputime = {2:4e}'\
+                    print 'eig : growth rate = {0:+4e}, frequency = {1:+4e}, cputime = {2:+4e}'\
                       .format(grow, freq, timesp)
-                    print 'eigs: growth rate = {0:4e}, frequency = {1:4e}, cputime = {2:4e}'\
+                    print 'eigs: growth rate = {0:+4e}, frequency = {1:+4e}, cputime = {2:+4e}'\
                       .format(growfd, freqfd, timefd)
+                    sys.stdout.flush()
 
     # Plot the eigenvalue results.
     nkt = (np.ravel(kts)).shape[0]

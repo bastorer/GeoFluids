@@ -23,18 +23,28 @@ cm = jet(201);
 
 M = max(abs(D(:)));
 
+%% Plot the faces
 hold on
 for ii = 1:length(p)
     surf = patch(isosurface(X,Y,Z,D,p(ii)*M));
     set(surf, 'FaceAlpha', 1/(length(p)+1),...
         'FaceColor', cm(round(101+100*p(ii)),:),...
-        'EdgeAlpha', 1/(length(p)+1))
+        'EdgeAlpha',0)
+    
+    verts = surf.vertices;
+    faces = surf.faces;
+    
+    
     
     surf = patch(isosurface(X,Y,Z,D,-p(ii)*M));
     set(surf, 'FaceAlpha', 1/(length(p)+1),...
         'FaceColor', cm(round(101-100*p(ii)),:),...
-        'EdgeAlpha', 1/(length(p)+1))
+        'EdgeAlpha',0)
 end
+
+%% Plot the edges
+
+
 hold off
 
 end

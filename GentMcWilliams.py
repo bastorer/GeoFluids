@@ -22,7 +22,6 @@ from scipy.misc import factorial
 from cheb import cheb
 from FiniteDiff import FiniteDiff
 
-
 # Parse commandline inputs
 parser = argparse.ArgumentParser()
 parser.add_argument('--Neig', help='Number of grid points for eig computations.',\

@@ -45,7 +45,8 @@ parser.add_argument('-kt', '--k_theta', help='Azimuthal wavenumbers. Enter as -k
                     type=float, default=[1,3,1], nargs=3)
 parser.add_argument('-kz', '--k_z', help='Vertical wavenumbers. Enter as -kz min max step.',\
                     type=float, default=[0,2,0.1], nargs=3)
-
+parser.add_argument('--modes', help='The number of modes of instability to be considered.',\
+                    type=int, default=1)
 args = parser.parse_args()
                     
 class Parameters:
@@ -61,7 +62,7 @@ class Parameters:
     Nt       = 40
     kts      = np.arange(args.k_theta[0],args.k_theta[1],args.k_theta[2])
     kzs      = np.arange(args.k_z[0],args.k_z[1],args.k_z[2])
-    nmodes   = 1
+    nmodes   = args.modes
     printout = args.PrintOutputs
 
     def display(self):
@@ -256,7 +257,7 @@ def QG_Vortex_Stability():
                     #plt.show()
                 except:
                     sig1 = [np.nan+1j*np.nan]
-                    print 'Eigs failed for mode {0:2f}, k_theta = {1:2f}, kz = {2:4f}.\n'.format(ii,kt,kz)
+                    print 'Eigs failed for mode {0:.2f}, k_theta = {1:.2f}, kz = {2:.4f}.\n'.format(ii,kt,kz)
                 
                 t1 = timeit.timeit()
                 timefd = t1 - t0
@@ -278,45 +279,48 @@ def QG_Vortex_Stability():
                       .format(growfd, freqfd, timefd)
 
     # Plot the eigenvalue results.
-    if (np.ravel(kts)).shape[0] < 4:
-        for ii in xrange(0, kts.shape[0]):
-            plt.subplot(1,2,1)
-            plt.plot(kzs, 4*np.ravel(growthfd[:,ii,0]), '-o', kzs, 4*np.ravel(growthsp[:,ii,0]), '-*')
-            plt.title('Growth Rate')
+    nkt = (np.ravel(kts)).shape[0]
+    nkz = (np.ravel(kzs)).shape[0]
+    for jj in xrange(0,nmodes):
+        plt.figure(jj)
+        if nkt < 4:
+            for ii in xrange(0, nkt):
+                plt.subplot(nkt,2,1+2*ii)
+                plt.plot(kzs, 4*np.ravel(growthfd[:,ii,jj]), '-o',\
+                         kzs, 4*np.ravel(growthsp[:,ii,jj]), '-*')
+                plt.title('Growth Rate')
         
-            plt.subplot(1,2,2)
-            plt.plot(kzs, 4*np.ravel(frequyfd[:,ii,0]), '-o', kzs, 4*np.ravel(frequysp[:,ii,0]), '-*')
-            plt.title('Prop. Speed')
-        
-            plt.show()
-    elif (np.ravel(kzs)).shape[0] < 4:
-        for ii in xrange(0, kzs.shape[0]):
-            plt.subplot(1,2,1)
-            plt.plot(np.ravel(kts), 4*np.ravel(growthfd[ii,:,0]), '-o', np.ravel(kts), 4*np.ravel(growthsp[ii,:,0]), '-*')
-            plt.title('Growth Rate')
+                plt.subplot(nkt,2,2+2*ii)
+                plt.plot(kzs, 4*np.ravel(frequyfd[:,ii,jj]), '-o', \
+                         kzs, 4*np.ravel(frequysp[:,ii,jj]), '-*')
+                plt.title('Prop. Speed')
+        elif nkz < 4:
+            for ii in xrange(0, nkz):
+                plt.subplot(nkz,2,1+2*nkz)
+                plt.plot(np.ravel(kts), 4*np.ravel(growthfd[ii,:,jj]), '-o', \
+                         np.ravel(kts), 4*np.ravel(growthsp[ii,:,jj]), '-*')
+                plt.title('Growth Rate')
     
-            plt.subplot(1,2,2)
-            plt.plot(np.ravel(kts), 4*np.ravel(frequyfd[ii,:,0]), '-o', np.ravel(kts), 4*np.ravel(frequysp[ii,:,0]), '-*')
-            plt.title('Prop. Speed')
-        
-            plt.show()
-    else:
-        
-        plt.subplot(2,2,1)
-        plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,0])
-        plt.title('Growth Rate (eigs)')
+                plt.subplot(nkz,2,2+2*nkz)
+                plt.plot(np.ravel(kts), 4*np.ravel(frequyfd[ii,:,jj]), '-o', \
+                         np.ravel(kts), 4*np.ravel(frequysp[ii,:,jj]), '-*')
+                plt.title('Prop. Speed')
+        else:
+            plt.subplot(2,2,1)
+            plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,jj])
+            plt.title('Growth Rate (eigs)')
 
-        plt.subplot(2,2,2)
-        plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,0])
-        plt.title('Prop. Speed (eigs)')
+            plt.subplot(2,2,2)
+            plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,jj])
+            plt.title('Prop. Speed (eigs)')
 
-        plt.subplot(2,2,3)
-        plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,0])
-        plt.title('Growth Rate (eig)')
+            plt.subplot(2,2,3)
+            plt.contour(np.ravel(kts), np.ravel(kzs), 4*growthfd[:,:,jj])
+            plt.title('Growth Rate (eig)')
 
-        plt.subplot(2,2,4)
-        plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,0])
-        plt.title('Prop. Speed (eig)')
+            plt.subplot(2,2,4)
+            plt.contour(np.ravel(kts), np.ravel(kzs), 4*frequyfd[:,:,jj])
+            plt.title('Prop. Speed (eig)')
 
         plt.show()
     

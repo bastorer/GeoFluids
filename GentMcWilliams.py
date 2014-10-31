@@ -256,7 +256,7 @@ def QG_Vortex_Stability():
                     #plt.show()
                 except:
                     sig1 = [np.nan+1j*np.nan]
-                    print 'Eigs failed for mode {0:.2f}, k_theta = {1:.2f}, kz = {2:.4f}.\n'.format(ii,kt,kz)
+                    print 'Eigs failed for mode {0:.2f}, k_theta = {1:.2f}, kz = {2:.4f}.'.format(ii,kt,kz)
                 
                 t1 = timeit.timeit()
                 timefd = t1 - t0

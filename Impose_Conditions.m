@@ -32,7 +32,7 @@ function [As, P] = Impose_Conditions(As, bs)
   if size(bs,1) > size(bs,2)
       error('Impose_Conditions: System is over-defined.')
   elseif size(bs,1) == size(bs,2)
-      error(['Impose_Conditions: System is critically defined and can' ...
+      error(['Impose_Conditions: System is critically defined and could' ...
             'be found uniquely.'])
   end
   
@@ -40,7 +40,6 @@ function [As, P] = Impose_Conditions(As, bs)
   %          linearly dependent conditions.
   
   num_conds = size(bs,1);
-  removed_conds = 0;
   bs = frref(bs);
   tmp = sum(abs(bs),2);
   bs = bs(tmp~=0,:);
@@ -50,7 +49,7 @@ function [As, P] = Impose_Conditions(As, bs)
       num_conds = size(bs,1);
       warning(['Impose_Conditions: %d Conditions were ' ...
                            'linear combinations of the other conditions.',...
-                      ' There are %d remaining conditions.'],...
+                      ' There are %d conditions remaining.'],...
                           null_conds, num_conds)
   end
   
@@ -58,9 +57,10 @@ function [As, P] = Impose_Conditions(As, bs)
   
   % Initialize the transformation matrix P to recovered the deleted
   % portions.
-  P = speye(size(As{1}));
+  P = speye(size(bs,2));
   
   counter = 0;
+  removed_conds = 0;
   while size(bs,1) > 0
       counter = counter + 1;
       index = find(bs(1,:), 1, 'first');
@@ -103,26 +103,18 @@ function [As, P] = Impose_Conditions(As, bs)
           P  = P  + aP*b;
           
           
-          % Modify the remaining conditions to account
-          % for the curent condition.
-          % Note: Since the condition matrix bs was put
-          % into RREF, this isn't necessary and so was
-          % removed.
-%           ab = bs(2:end,index);          
-          
+          % Remove the applied condition.          
           if size(bs,1) > 1
               bs = bs(2:end,:);
               bs(:,index) = [];
-%               bs = bs + ab*b;
           else
               bs = [];
           end
       end
   end
   
-%   warning(['Impose_Conditions: %d Conditions were ' ...
-%            'linear combinations of the other conditions.',...
-%            ' %d of %d conditions have been imposed.'],...
-%            removed_conds, num_conds-removed_conds, num_conds)
+  if not_cell
+      As = As{1};
+  end
   
 end

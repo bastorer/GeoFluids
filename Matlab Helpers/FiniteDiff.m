@@ -148,7 +148,11 @@ if uniform
         coeff = A\b;
         coeff = coeff';
         coeff = repmat(coeff, Nx-n, 1);
-        Dx(ceil(n/2)+1:Nx-ceil(n/2),:) = spdiags(coeff, 0:n, Nx-n-1, Nx);
+        if OrdD == 1
+            Dx(ceil(n/2)+1:Nx-ceil(n/2),:) = spdiags(coeff, 0:n, Nx-n-1, Nx);
+        elseif OrdD > 1
+            Dx(ceil(n/2):Nx-ceil(n/2),:) = spdiags(coeff, 0:n, Nx-n, Nx);
+        end
     end
 else
     for i = 1:Nx

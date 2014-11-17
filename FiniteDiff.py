@@ -58,7 +58,8 @@ def FiniteDiff(x, n, spb, uniform):
         A = np.zeros([n+1,n+1])
         if n % 2 == 0: # If even...
             for j in range(-n/2-1,n/2):
-                A[:,j+n/2+1] = np.power(((j+1)*dx)*np.ones([1,n+1]),range(0,n+1))/factorial(range(0,n+1))
+                A[:,j+n/2+1] = np.power(((j+1)*dx)*np.ones([1,n+1]),range(0,n+1))\
+                				/factorial(range(0,n+1))
             b = np.zeros(n+1)
             b[1] = 1
             #print A
@@ -69,7 +70,8 @@ def FiniteDiff(x, n, spb, uniform):
             Dx[n/2:Nx-n/2,:] = sp.spdiags(coeff.T, range(0,n+1), Nx-n, Nx).todense()
         elif n % 2 == 1: # If odd...
             for j in range(int(-np.floor(n/2.0))-1,int(np.ceil(n/2.0))):
-                A[:,j+int(np.floor(n/2.0))+1] = ((j*dx)**range(0,n+1))/factorial(range(0,n+1))
+                A[:,j+int(np.floor(n/2.0))+1] = (np.power((j*dx)*np.ones([1,n+1]),range(0,n+1)))\
+                						/factorial(range(0,n+1))
             b = np.zeros(n+1)
             b[1] = 1;
             coeff = nlg.solve(A,b)
@@ -83,7 +85,8 @@ def FiniteDiff(x, n, spb, uniform):
                 A = np.zeros([n+1,n+1])
                 for j in range(0,n+1):
                     dx = x[j]-x[i]
-                    A[:,j] = (dx**range(0,n+1))/factorial(range(0,n+1))
+                    A[:,j] = np.power(dx*np.ones([1,n+1]),range(0,n+1))\
+                    			/factorial(range(0,n+1))
                 b = np.zeros(n+1)
                 b[1] = 1
                 coeff = nlg.solve(A,b)
@@ -94,7 +97,8 @@ def FiniteDiff(x, n, spb, uniform):
                 A = np.zeros([n+1,n+1])
                 for j in range(Nx-n-1,Nx):
                     dx = x[j]-x[i]
-                    A[:,j-Nx+n+1] = (dx**range(0,n+1))/factorial(range(0,n+1));
+                    A[:,j-Nx+n+1] = np.power(dx*np.ones([1,n+1]),range(0,n+1))/\
+                    					factorial(range(0,n+1));
                 b = np.zeros(n+1)
                 b[1] = 1
                 coeff = nlg.solve(A,b)
@@ -105,37 +109,40 @@ def FiniteDiff(x, n, spb, uniform):
                 # If n is even, then just use a centred scheme
                 if n % 2 == 0:
                     A = np.zeros([n+1,n+1])
-                    for j in range(-n/2-1,n/2):
+                    for j in range(-n/2,n/2+1):
                         dx = x[i+j] - x[i]
-                        A[:,j+n/2+1] = (dx**range(0,n+1))/factorial(range(0,n+1))
+                        A[:,j+n/2] = np.power(dx*np.ones([1,n+1]),range(0,n+1))/\
+                        				factorial(range(0,n+1))
                     b = np.zeros(n+1)
                     b[1] = 1;
                     coeff = nlg.solve(A,b)
                     coeff = coeff.conj().transpose()
-                    Dx[i, i-n/2:i+n/2] = coeff
+                    Dx[i, i-n/2-1:i+n/2] = coeff
 
                 # If n is odd, then bias to which side has the closest point.
                 elif n % 2 == 1:
-                    if abs(x[i+int(np.ceil(n/2.0))] - x[i]) <= abs(x[i-int(ceil(n/2.0))] - x[i]):
-                        A = np.zeros(n+1,n+1)
-                        for j in range(-int(np.floor(n/2.0))-1,int(np.ceil(n/2.0))):
+                    if abs(x[i+int(np.ceil(n/2.0))] - x[i]) <= abs(x[i-int(np.ceil(n/2.0))] - x[i]):
+                        A = np.zeros([n+1,n+1])
+                        for j in range(-int(np.floor(n/2.0)),int(np.ceil(n/2.0))+1):
                             dx = x[i+j] - x[i]
-                            A[:,j+int(np.floor(n/2.0))+1] = (dx**range(0,n+1))/factorial(range(0,n+1))
+                            A[:,j+int(np.floor(n/2.0))] = \
+                            	np.power(dx*np.ones([1,n+1]),range(0,n+1))/factorial(range(0,n+1))
                         b = np.zeros(n+1)
                         b[1] = 1
                         coeff = nlg.solve(A,b)
                         coeff = coeff.conj().transpose()
-                        Dx[i, i-int(np.floor(n/2.0)):i+int(np.ceil(n/2.0))] = coeff
+                        Dx[i, i-int(np.floor(n/2.0))-1:i+int(np.ceil(n/2.0))] = coeff
                     else:
                         A = np.zeros([n+1,n+1])
-                        for j in range(-int(np.ceil(n/2.0))-1,int(np.floor(n/2.0))):
+                        for j in range(-int(np.ceil(n/2.0)),int(np.floor(n/2.0))+1):
                             dx = x[i+j] - x[i]
-                            A[:,j+int(np.ceil(n/2.0))+1] = (dx**range(0,n))/factorial(range(0,n))
+                            A[:,j+int(np.ceil(n/2.0))] = \
+                            	np.power(dx*np.ones([1,n+1]),range(0,n+1))/factorial(range(0,n+1))
                         b = np.zeros(n+1)
                         b[1] = 1
                         coeff = nlg.solve(A,b)
-                        coeff = coeff.conj().tranpose()
-                        Dx[i, i-int(np.ceil(n/2.0)):i+int(np.floor(n/2.0))] = coeff
+                        coeff = coeff.conj().transpose()
+                        Dx[i, i-int(np.ceil(n/2.0))-1:i+int(np.floor(n/2.0))] = coeff
 
     if spb:
         # If we're making a sparse matrix, convert it now into csr form.
@@ -148,10 +155,10 @@ if __name__ == '__main__': #For testing
     Lx = 2
     diff_ordx = 2
     x = np.linspace(0, Lx, Nx+1)
-    print 'Sparse Test'
+    print('Sparse Test')
     Dx = FiniteDiff(x, diff_ordx, True, True)
-    print Dx
+    print(Dx)
 
-    print 'Non-Sparse Test'
+    print('Non-Sparse Test')
     Dx = FiniteDiff(x, diff_ordx, False, True)
-    print Dx
+    print(Dx)
